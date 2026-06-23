@@ -1,82 +1,66 @@
 # Event-Driven Data Warehouse Pipeline
 
 ## Overview
-
-Проект демонстрирует построение распределённой аналитической платформы
-на основе event-driven архитектуры и многослойного DWH (STG → DDS → CDM).
-
-Система реализована как набор микросервисов, каждый из которых отвечает
-за отдельный слой обработки данных и разворачивается независимо в Kubernetes.
-
-Инфраструктура полностью поднята в Yandex Cloud.
+Проект — это распределённая аналитическая платформа на основе event-driven архитектуры и DWH (STG → DDS → CDM).
+Система состоит из нескольких сервисов, каждый отвечает за свой слой обработки данных и разворачивается отдельно в Kubernetes.
+Инфраструктура поднята в Yandex Cloud.
 
 ## Infrastructure
-- Kafka — поток событий (ingestion layer)
-- PostgreSQL — хранение слоёв STG/DDS/CDM
-- Redis (Valkey) — обогащение данных
+- Kafka — поток событий
+- PostgreSQL — хранение данных (STG / DDS / CDM)
+- Redis (Valkey) — кэш и обогащение данных
 - Container Registry — хранение Docker-образов
-- Kubernetes (Yandex Cloud) — оркестрация сервисов
-- DataLens — визуализация витрин
+- Kubernetes (Yandex Cloud) — запуск сервисов
+- DataLens — дашборды
 
-## Microservices Architecture
-Каждый слой реализован как отдельный сервис:
-- `service_stg` — обогащение и первичная нормализация данных
-- `service_dds` — очистка и приведение к доменной модели (Data Vault)
-- `service_cdm` — построение аналитических витрин
+## Microservices
+Система разделена на 3 сервиса:
+- `service_stg` — приём и первичная обработка данных
+- `service_dds` — очистка и приведение к модели (Data Vault)
+- `service_cdm` — формирование витрин
 
 Каждый сервис:
-- упакован в Docker image
+- собран в Docker образ
 - хранится в Container Registry
-- разворачивается в Kubernetes как независимый компонент
+- запускается в Kubernetes отдельно
 
 ## Data Layers
+### STG
+- сырые данные
+- без бизнес-логики
+- идемпотентная загрузка
+### DDS
+- очищенные и нормализованные данные
+- модель Data Vault
+- основа для дальнейших витрин
+### CDM
+- витрины для аналитики
+- агрегаты и финальные таблицы
 
-### STG (Staging Layer)
-- хранит сырые данные без бизнес-логики
-- обеспечивает идемпотентность загрузок
+## Architecture decisions
+- Kafka используется для event-driven архитектуры
+- Разделение на STG / DDS / CDM для понятной структуры данных
+- Redis используется для кеша и enrichment
+- Каждый слой — отдельный сервис
+- Kubernetes управляет запуском и масштабированием
 
-### DDS (Data Detail Store)
-- нормализованные сущности
-- модель в стиле Data Vault
-- ключевая задача — консистентность данных
-
-### CDM (Core Data Mart)
-- агрегированные витрины
-- оптимизированы под BI и аналитические запросы
-
-## Engineering Decisions
-- Использована event-driven архитектура через Kafka для слабой связанности сервисов
-- Разделение на STG / DDS / CDM для поддержки масштабирования и историчности данных
-- Redis (Valkey) применяется для ускорения enrichment и хранения промежуточного состояния
-- Каждый слой вынесен в отдельный микросервис для независимого деплоя
-- Использован Kubernetes для управления жизненным циклом сервисов
-
-## Cloud Infrastructure
-Все компоненты развернуты в **Yandex Cloud**:
+## Cloud setup
+Все развернуто в Yandex Cloud:
 - Kafka cluster
-- PostgreSQL instances
+- PostgreSQL
 - Redis (Valkey)
 - Container Registry
 - Kubernetes cluster
-
-CI/CD процесс:
+CI/CD:
 - сборка Docker образов
-- пуш в registry
+- загрузка в registry
 - деплой в Kubernetes
 
-## Lessons Learned
-В рамках проекта я:
-- спроектировал и реализовал многослойную DWH архитектуру (STG → DDS → CDM)
-- работал с event-driven системами на Kafka
-- развернул распределённую инфраструктуру в Yandex Cloud
-- использовал Kubernetes для оркестрации микросервисов
-- реализовал ETL/ELT пайплайны в микросервисной архитектуре
-- применил Redis (Valkey) для ускорения обработки данных
-
-## Key Value
-Проект демонстрирует навыки:
-- Data Engineering (ETL, DWH, pipeline design)
-- Distributed systems thinking
-- Cloud-native architecture
-- Microservices design
-- Event-driven architecture
+## What I learned
+В этом проекте я:
+- собрал DWH архитектуру STG → DDS → CDM
+- работал с Kafka и event-driven подходом
+- развернул инфраструктуру в облаке
+- использовал Kubernetes для микросервисов
+- проектировал ETL процессы
+- работал с Redis для ускорения обработки данных
